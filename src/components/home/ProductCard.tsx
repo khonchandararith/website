@@ -8,6 +8,8 @@ import { useCart } from '@/hooks/useCart';
 import type { Product } from '@/lib/types';
 import { toast } from 'sonner';
 
+import { formatImageUrl } from '@/lib/utils';
+
 interface ProductCardProps {
   product: Product;
 }
@@ -15,6 +17,7 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const addItem = useCart((state) => state.addItem);
   const inStock = (product.stock_count ?? 0) > 0;
+  const imageUrl = formatImageUrl(product.image_url);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -29,10 +32,11 @@ export function ProductCard({ product }: ProductCardProps) {
       <div className="glass-card rounded-2xl overflow-hidden h-full flex flex-col">
         {/* Image */}
         <div className="relative aspect-[4/3] bg-gradient-to-br from-white/5 to-white/2 overflow-hidden">
-          {product.image_url ? (
+          {imageUrl ? (
             <img
-              src={product.image_url}
+              src={imageUrl}
               alt={product.title}
+              referrerPolicy="no-referrer"
               className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
           ) : (

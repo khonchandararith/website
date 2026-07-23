@@ -23,6 +23,7 @@ import {
 import { createClient } from '@/lib/supabase/client';
 import type { Product, Category } from '@/lib/types';
 import { toast } from 'sonner';
+import { formatImageUrl } from '@/lib/utils';
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -184,8 +185,17 @@ export default function AdminProductsPage() {
                 <TableRow key={product.id} className="border-white/5">
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
-                        <Package className="w-4 h-4 text-muted-foreground" />
+                      <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center overflow-hidden shrink-0 border border-white/10">
+                        {formatImageUrl(product.image_url) ? (
+                          <img
+                            src={formatImageUrl(product.image_url)!}
+                            alt={product.title}
+                            referrerPolicy="no-referrer"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Package className="w-4 h-4 text-muted-foreground" />
+                        )}
                       </div>
                       <div>
                         <div className="text-sm font-medium">{product.title}</div>

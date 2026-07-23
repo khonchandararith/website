@@ -23,6 +23,8 @@ import { CheckoutDialog } from '@/components/checkout/CheckoutDialog';
 import type { Product } from '@/lib/types';
 import { toast } from 'sonner';
 
+import { formatImageUrl } from '@/lib/utils';
+
 export default function ProductDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
@@ -127,10 +129,11 @@ export default function ProductDetailPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Image */}
             <div className="glass-card rounded-2xl aspect-square flex items-center justify-center relative overflow-hidden p-4">
-              {product.image_url && !imageError ? (
+              {formatImageUrl(product.image_url) && !imageError ? (
                 <img
-                  src={product.image_url}
+                  src={formatImageUrl(product.image_url)!}
                   alt={product.title}
+                  referrerPolicy="no-referrer"
                   className="w-full h-full object-cover rounded-xl"
                   onError={() => setImageError(true)}
                 />
