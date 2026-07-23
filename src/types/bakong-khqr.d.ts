@@ -31,6 +31,25 @@ declare module 'bakong-khqr' {
   }
 
   export class IndividualInfo {
+    bakongAccountID: string;
+    accountInformation: string;
+    acquiringBank: number;
+    currency: number;
+    amount: number;
+    merchantName: string;
+    merchantCity: string;
+    billNumber: string;
+    storeLabel: string;
+    terminalLabel: string;
+    mobileNumber: string;
+    purposeOfTransaction: string;
+    languagePreference: string;
+    merchantNameAlternateLanguage: string;
+    merchantCityAlternateLanguage: string;
+    upiMerchantAccount: string;
+    expirationTimestamp: string;
+    merchantCategoryCode: string;
+
     constructor(
       bakongAccountID: string,
       merchantName: string,

@@ -30,6 +30,29 @@ function AuthForm() {
 
   const supabase = createClient();
 
+  const handleForgotPassword = async () => {
+    if (!signInEmail) {
+      toast.error('Please enter your email address first');
+      return;
+    }
+    setLoading(true);
+    try {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const { error } = await supabase.auth.resetPasswordForEmail(signInEmail, {
+        redirectTo: `${origin}/auth/callback?next=/my-orders`,
+      });
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success(`Password reset email sent to ${signInEmail}!`);
+      }
+    } catch {
+      toast.error('Failed to send reset email');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!signInEmail || !signInPassword) {
@@ -75,10 +98,12 @@ function AuthForm() {
 
     setLoading(true);
     try {
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
       const { data, error } = await supabase.auth.signUp({
         email: signUpEmail,
         password: signUpPassword,
         options: {
+          emailRedirectTo: `${origin}/auth/callback`,
           data: {
             full_name: signUpName || signUpEmail.split('@')[0],
           },
@@ -219,10 +244,19 @@ function AuthForm() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-blue-400" />
-                  Password
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-blue-400" />
+                    Password
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    className="text-xs text-blue-400 hover:underline font-medium"
+                  >
+                    Forgot Password?
+                  </button>
+                </div>
                 <Input
                   type="password"
                   placeholder="••••••••"

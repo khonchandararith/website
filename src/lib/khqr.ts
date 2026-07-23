@@ -1,4 +1,4 @@
-import { BakongKHQR, MerchantInfo, khqrData } from 'bakong-khqr';
+import { BakongKHQR, MerchantInfo, IndividualInfo, khqrData } from 'bakong-khqr';
 import QRCode from 'qrcode';
 
 export interface KHQRGenerateResult {
@@ -14,40 +14,55 @@ export async function generateKHQR(
 ): Promise<KHQRGenerateResult> {
   const currencyCode = currency === 'USD' ? khqrData.currency.usd : khqrData.currency.khr;
 
-  // KHQR merchantID has a max length limit — strip dashes and truncate UUID
+  // KHQR billNumber has a max length limit — strip dashes and truncate UUID
   const shortId = orderId.replace(/-/g, '').substring(0, 25);
 
   const bakongAccount = process.env.NEXT_PUBLIC_BAKONG_ACCOUNT_ID || 'rithstore@acleda';
   const merchantName = process.env.NEXT_PUBLIC_BAKONG_MERCHANT_NAME || 'RITH STORE';
   const merchantCity = process.env.NEXT_PUBLIC_BAKONG_CITY || 'Phnom Penh';
 
-  // Create MerchantInfo — constructor sets merchantID and acquiringBank
-  // but doesn't properly set currency/amount, we must set them explicitly
-  const merchantInfo = new MerchantInfo(
-    bakongAccount,
-    merchantName,
-    merchantCity,
-    shortId,
-    currencyCode,
-    amount
-  );
-
-  // Explicitly set currency and amount (constructor swaps currency/acquiringBank)
-  merchantInfo.currency = currencyCode;
-  merchantInfo.amount = amount;
-
-  // Set bill number and labels for transaction tracking
-  merchantInfo.billNumber = shortId;
-  merchantInfo.storeLabel = merchantName;
-  merchantInfo.terminalLabel = 'WEB';
-
-  // Dynamic QR requires expiration timestamp (milliseconds since epoch)
-  merchantInfo.expirationTimestamp = String(Date.now() + 10 * 60 * 1000); // 10 minutes
-
   const khqr = new BakongKHQR();
-  const result = khqr.generateMerchant(merchantInfo);
+  let result;
 
-  if (result.status.code !== 0) {
+  // Personal Bakong Account IDs (e.g. user@aclb, 012345678@abaa) require Tag 29 (generateIndividual)
+  // for full cross-bank compatibility with ABA Mobile, ACLEDA, Wing, and all Bakong apps.
+  if (bakongAccount.includes('@')) {
+    const individualInfo = new IndividualInfo(
+      bakongAccount,
+      merchantName,
+      merchantCity,
+      currencyCode,
+      amount
+    );
+    individualInfo.currency = currencyCode;
+    individualInfo.amount = amount;
+    individualInfo.billNumber = shortId;
+    individualInfo.storeLabel = merchantName;
+    individualInfo.terminalLabel = 'WEB';
+    individualInfo.expirationTimestamp = String(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    result = khqr.generateIndividual(individualInfo);
+  } else {
+    // Registered Corporate KHQR Merchant Accounts use Tag 30 (generateMerchant)
+    const merchantInfo = new MerchantInfo(
+      bakongAccount,
+      merchantName,
+      merchantCity,
+      shortId,
+      currencyCode,
+      amount
+    );
+    merchantInfo.currency = currencyCode;
+    merchantInfo.amount = amount;
+    merchantInfo.billNumber = shortId;
+    merchantInfo.storeLabel = merchantName;
+    merchantInfo.terminalLabel = 'WEB';
+    merchantInfo.expirationTimestamp = String(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    result = khqr.generateMerchant(merchantInfo);
+  }
+
+  if (result.status.code !== 0 || !result.data) {
     throw new Error(`KHQR generation failed: ${result.status.message || 'Unknown error'} (code: ${result.status.errorCode})`);
   }
 

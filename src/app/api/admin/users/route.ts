@@ -141,19 +141,48 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Email is required' }, { status: 400 });
       }
 
+      // Determine dynamic app URL origin
+      let origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || '';
+      if (!origin && request.headers.get('referer')) {
+        try {
+          const refUrl = new URL(request.headers.get('referer')!);
+          origin = refUrl.origin;
+        } catch {
+          // ignore parsing error
+        }
+      }
+      if (!origin) {
+        origin = 'http://localhost:3000';
+      }
+
+      const redirectTo = `${origin}/auth/callback?next=/my-orders`;
+
       const { data, error } = await supabase.auth.admin.generateLink({
         type: 'recovery',
         email,
+        options: {
+          redirectTo,
+        },
       });
 
       if (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
+      let recoveryLink = data.properties?.action_link || '';
+
+      // Force replacement if Supabase project default Site URL is still set to localhost:3000
+      if (recoveryLink && origin && !origin.includes('localhost')) {
+        const encodedOrigin = encodeURIComponent(origin);
+        recoveryLink = recoveryLink
+          .replace(/redirect_to=http%3A%2F%2Flocalhost%3A3000/g, `redirect_to=${encodedOrigin}`)
+          .replace(/redirect_to=http:\/\/localhost:3000/g, `redirect_to=${origin}`);
+      }
+
       return NextResponse.json({
         success: true,
         message: 'Password reset link generated successfully',
-        recoveryLink: data.properties?.action_link,
+        recoveryLink,
       });
     }
 
