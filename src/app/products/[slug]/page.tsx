@@ -29,6 +29,7 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const addItem = useCart((s) => s.addItem);
 
   useEffect(() => {
@@ -39,6 +40,7 @@ export default function ProductDetailPage() {
           const data = await res.json();
           if (data.product) {
             setProduct(data.product as Product);
+            setImageError(false);
           }
         }
       } catch {
@@ -124,13 +126,22 @@ export default function ProductDetailPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Image */}
-            <div className="glass-card rounded-2xl aspect-square flex items-center justify-center p-12">
-              <div className="text-center space-y-4">
-                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mx-auto">
-                  <Key className="w-12 h-12 text-blue-400" />
+            <div className="glass-card rounded-2xl aspect-square flex items-center justify-center relative overflow-hidden p-4">
+              {product.image_url && !imageError ? (
+                <img
+                  src={product.image_url}
+                  alt={product.title}
+                  className="w-full h-full object-cover rounded-xl"
+                  onError={() => setImageError(true)}
+                />
+              ) : (
+                <div className="text-center space-y-4 p-8">
+                  <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center mx-auto">
+                    <Key className="w-12 h-12 text-blue-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-muted-foreground">{product.title}</h3>
                 </div>
-                <h3 className="text-lg font-semibold text-muted-foreground">{product.title}</h3>
-              </div>
+              )}
             </div>
 
             {/* Details */}
